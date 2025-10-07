@@ -1,7 +1,4 @@
 
-  # Rideshare Web App Design
-
-  This is a code bundle for Rideshare Web App Design. The original project is available at https://www.figma.com/design/bywewmQTJ2BH4XohtK6sEC/Rideshare-Web-App-Design.
 
   ## Running the code
 
