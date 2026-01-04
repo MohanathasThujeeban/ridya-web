@@ -26,7 +26,6 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -73,6 +72,10 @@ app.use(
     changeOrigin: true,
     pathRewrite: {
       '^/api/auth': '/api/auth',
+    },
+    logLevel: 'debug',
+    onProxyReq: (proxyReq, req, res) => {
+      logger.info(`Proxying ${req.method} ${req.url} to auth service`);
     },
     onError: (err, req, res) => {
       logger.error('Auth service error:', err);
