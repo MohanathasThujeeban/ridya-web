@@ -1,115 +1,88 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
 import { ArrowLeft, Mail, Phone, Eye, EyeOff, User, Car } from "lucide-react";
 import rideyaLogo from "figma:asset/6e7f4dbeb5a4a8f55405b8ef99dd0323b83f0292.png";
 
 type UserRole = 'PASSENGER' | 'DRIVER';
 
-interface SignUpPageProps {
-  onNavigate?: (sectionId: string) => void;
-  selectedRole?: UserRole;
-}
-
-export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
+export function SignInPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const roleFromState = location.state?.role as UserRole | undefined;
-  const selectedRole = propRole || roleFromState;
   
-  // Redirect to role-select if no role is selected
-  useEffect(() => {
-    if (!selectedRole) {
-      console.log('No role selected, redirecting to role-select');
-      navigate('/role-select', { replace: true });
-    }
-  }, [selectedRole, navigate]);
-  
-  const [authMethod, setAuthMethod] = useState<'google' | 'phone' | 'email'>('google');
+  const [authMethod, setAuthMethod] = useState<'google' | 'phone' | 'email'>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
     password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    otp: '',
-    role: selectedRole || 'PASSENGER'
+    otp: ''
   });
-  const [step, setStep] = useState<'method' | 'details' | 'otp'>('method');
-  const [isRedirecting, setIsRedirecting] = useState(!selectedRole);
-
-  // Redirect to role-select if no role is selected
-  useEffect(() => {
-    if (!selectedRole) {
-      console.log('No role selected, redirecting to role-select');
-      setIsRedirecting(true);
-      navigate('/role-select', { replace: true });
-    }
-  }, [selectedRole, navigate]);
+  const [step, setStep] = useState<'method' | 'otp'>('method');
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(roleFromState || null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGoogleSignUp = () => {
+  const handleGoogleSignIn = () => {
     // Google OAuth integration will go here
-    console.log('Google Sign Up');
+    console.log('Google Sign In');
   };
 
-  const handlePhoneSignUp = () => {
-    if (formData.phone) {
+  const handlePhoneSignIn = () => {
+    if (formData.phone && selectedRole) {
       setStep('otp');
       // SMS OTP logic will go here
       console.log('Sending OTP to:', formData.phone);
     }
   };
 
-  const handleEmailSignUp = () => {
-    if (formData.email && formData.password) {
-      // Email signup logic will go here
-      console.log('Email Sign Up:', formData.email);
+  const handleEmailSignIn = () => {
+    if (formData.email && formData.password && selectedRole) {
+      // Email signin logic will go here
+      console.log('Email Sign In:', formData.email, 'Role:', selectedRole);
+      
+      // Store user role
+      localStorage.setItem('userRole', selectedRole);
+      localStorage.setItem('userData', JSON.stringify({
+        email: formData.email,
+        role: selectedRole
+      }));
+      
+      // Navigate based on role
+      if (selectedRole === 'DRIVER') {
+        navigate('/driver-dashboard');
+      } else {
+        navigate('/');
+      }
     }
   };
 
   const handleOTPVerification = () => {
-    if (formData.otp) {
-      setStep('details');
+    if (formData.otp && selectedRole) {
       console.log('OTP Verified:', formData.otp);
+      
+      // Store user role
+      localStorage.setItem('userRole', selectedRole);
+      localStorage.setItem('userData', JSON.stringify({
+        phone: formData.phone,
+        role: selectedRole
+      }));
+      
+      // Navigate based on role
+      if (selectedRole === 'DRIVER') {
+        navigate('/driver-dashboard');
+      } else {
+        navigate('/');
+      }
     }
   };
-
-  const handleCompleteSignUp = () => {
-    console.log('Complete Sign Up:', formData);
-    // Store user role and data
-    localStorage.setItem('userRole', formData.role);
-    localStorage.setItem('userData', JSON.stringify({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      role: formData.role
-    }));
-    // Navigate based on role
-    if (formData.role === 'DRIVER') {
-      navigate('/driver-dashboard');
-    } else {
-      navigate('/');
-    }
-  };
-
-  const handleBackToHome = () => {
-    navigate('/role-select');
-  };
-
-  // Show nothing while redirecting
-  if (isRedirecting || !selectedRole) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -126,10 +99,10 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
           variant="ghost"
           size="sm"
           className="mb-6 touch-feedback"
-          onClick={handleBackToHome}
+          onClick={() => navigate('/role-select')}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Role Selection
+          Back
         </Button>
 
         <Card className="p-8 shadow-2xl border-0 bg-white/95 backdrop-blur-lg card-3d">
@@ -148,34 +121,79 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
                 />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Join RIDEYA as {selectedRole === 'DRIVER' ? 'a Driver' : 'a Passenger'}
-            </h1>
-            <p className="text-muted-foreground">
-              {selectedRole === 'DRIVER' ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Car className="w-4 h-4" />
-                  Drive & Earn • Smart Transportation
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <User className="w-4 h-4" />
-                  Safe Rides • Smart Transportation
-                </span>
-              )}
-            </p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to continue</p>
           </div>
+
+          {/* Role Selection */}
+          {!selectedRole && (
+            <div className="mb-6">
+              <Label className="mb-3 block text-center">Select Your Role</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Card 
+                  className={`cursor-pointer transition-all hover:scale-105 ${
+                    selectedRole === 'PASSENGER' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                  }`}
+                  onClick={() => setSelectedRole('PASSENGER')}
+                >
+                  <div className="p-4 text-center">
+                    <User className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                    <p className="font-medium text-sm">Passenger</p>
+                  </div>
+                </Card>
+                <Card 
+                  className={`cursor-pointer transition-all hover:scale-105 ${
+                    selectedRole === 'DRIVER' ? 'ring-2 ring-primary bg-primary/5' : ''
+                  }`}
+                  onClick={() => setSelectedRole('DRIVER')}
+                >
+                  <div className="p-4 text-center">
+                    <Car className="w-8 h-8 mx-auto mb-2 text-primary" />
+                    <p className="font-medium text-sm">Driver</p>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Show selected role */}
+          {selectedRole && (
+            <div className="mb-6 text-center">
+              <Badge className={selectedRole === 'DRIVER' ? 'bg-primary' : 'bg-blue-500'}>
+                {selectedRole === 'DRIVER' ? (
+                  <span className="flex items-center gap-1">
+                    <Car className="w-3 h-3" />
+                    Driver
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    Passenger
+                  </span>
+                )}
+              </Badge>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="ml-2 text-xs"
+                onClick={() => setSelectedRole(null)}
+              >
+                Change
+              </Button>
+            </div>
+          )}
 
           {/* Step: Choose Authentication Method */}
           {step === 'method' && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-center mb-6">Choose Sign Up Method</h2>
+              <h2 className="text-lg font-semibold text-center mb-6">Sign In Method</h2>
               
-              {/* Google Sign Up */}
+              {/* Google Sign In */}
               <Button
                 variant="outline"
                 className="w-full py-6 border-2 hover:border-primary/50 touch-feedback"
-                onClick={handleGoogleSignUp}
+                onClick={handleGoogleSignIn}
+                disabled={!selectedRole}
               >
                 <div className="flex items-center justify-center space-x-3">
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -197,51 +215,29 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
                 </div>
               </div>
 
-              {/* Phone Sign Up */}
-              <Button
-                variant="outline"
-                className="w-full py-6 border-2 hover:border-primary/50 touch-feedback"
-                onClick={() => setAuthMethod('phone')}
-              >
-                <Phone className="w-5 h-5 mr-3" />
-                <span className="font-medium">Continue with Phone</span>
-              </Button>
+              {/* Email/Phone Toggle */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={authMethod === 'email' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setAuthMethod('email')}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Email
+                </Button>
+                <Button
+                  variant={authMethod === 'phone' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setAuthMethod('phone')}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Phone
+                </Button>
+              </div>
 
-              {/* Email Sign Up */}
-              <Button
-                variant="outline"
-                className="w-full py-6 border-2 hover:border-primary/50 touch-feedback"
-                onClick={() => setAuthMethod('email')}
-              >
-                <Mail className="w-5 h-5 mr-3" />
-                <span className="font-medium">Continue with Email</span>
-              </Button>
-
-              {/* Show form based on selected method */}
-              {authMethod === 'phone' && (
-                <div className="mt-6 space-y-4">
-                  <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+94 70 123 4567"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <Button 
-                    className="w-full button-3d gradient-3d"
-                    onClick={handlePhoneSignUp}
-                  >
-                    Send OTP
-                  </Button>
-                </div>
-              )}
-
+              {/* Email Sign In */}
               {authMethod === 'email' && (
-                <div className="mt-6 space-y-4">
+                <div className="space-y-4">
                   <div>
                     <Label htmlFor="email">Email Address</Label>
                     <Input
@@ -259,7 +255,7 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create a strong password"
+                        placeholder="Enter your password"
                         value={formData.password}
                         onChange={(e) => handleInputChange('password', e.target.value)}
                         className="mt-1 pr-10"
@@ -275,22 +271,44 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
                       </Button>
                     </div>
                   </div>
+                  
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm"
+                  >
+                    Forgot Password?
+                  </Button>
+
+                  <Button 
+                    className="w-full button-3d gradient-3d"
+                    onClick={handleEmailSignIn}
+                    disabled={!selectedRole}
+                  >
+                    Sign In
+                  </Button>
+                </div>
+              )}
+
+              {/* Phone Sign In */}
+              {authMethod === 'phone' && (
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="phone">Phone Number</Label>
                     <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      id="phone"
+                      type="tel"
+                      placeholder="+94 70 123 4567"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
                       className="mt-1"
                     />
                   </div>
                   <Button 
                     className="w-full button-3d gradient-3d"
-                    onClick={handleEmailSignUp}
+                    onClick={handlePhoneSignIn}
+                    disabled={!selectedRole}
                   >
-                    Create Account
+                    Send OTP
                   </Button>
                 </div>
               )}
@@ -325,7 +343,7 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
                 className="w-full button-3d gradient-3d"
                 onClick={handleOTPVerification}
               >
-                Verify & Continue
+                Verify & Sign In
               </Button>
 
               <Button 
@@ -338,72 +356,16 @@ export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
             </div>
           )}
 
-          {/* Step: Complete Profile */}
-          {step === 'details' && (
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-lg font-semibold mb-2">Complete Your Profile</h2>
-                <p className="text-muted-foreground">Tell us a bit about yourself</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              {authMethod === 'phone' && (
-                <div>
-                  <Label htmlFor="profileEmail">Email Address (Optional)</Label>
-                  <Input
-                    id="profileEmail"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              )}
-
-              <Button 
-                className="w-full button-3d gradient-3d"
-                onClick={handleCompleteSignUp}
-              >
-                Complete Sign Up
-              </Button>
-            </div>
-          )}
-
-          {/* Sign In Link */}
+          {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
+              Don't have an account?{' '}
               <Button 
                 variant="link" 
                 className="p-0 h-auto font-medium text-primary"
-                onClick={() => navigate('/signin', { state: { role: selectedRole } })}
+                onClick={() => navigate('/role-select')}
               >
-                Sign In
+                Sign Up
               </Button>
             </p>
           </div>

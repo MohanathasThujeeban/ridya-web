@@ -10,10 +10,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3004;
 
-// Initialize Twilio
-const twilioClient = process.env.TWILIO_ACCOUNT_SID
-  ? new Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
+// Initialize Twilio (optional - only if credentials are provided)
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+
+const twilioClient = 
+  twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith('AC')
+    ? new Twilio(twilioAccountSid, twilioAuthToken)
+    : null;
+
+if (!twilioClient) {
+  console.log('⚠️  Twilio not configured - SMS notifications will be disabled');
+}
 
 // Initialize Nodemailer
 const emailTransporter = nodemailer.createTransport({

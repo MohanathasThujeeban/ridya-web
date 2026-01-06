@@ -89,7 +89,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
                 <Button 
                   size="lg" 
                   className="group button-3d gradient-3d border-0 text-white ripple"
-                  onClick={() => onNavigate?.('booking')}
+                  onClick={() => onNavigate?.('role-select')}
                 >
                   Book Your Ride
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -98,7 +98,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
                   variant="outline" 
                   size="lg" 
                   className="card-3d border-primary/20 hover:border-primary ripple"
-                  onClick={() => onNavigate?.('contact')}
+                  onClick={() => onNavigate?.('role-select')}
                 >
                   Become a Driver
                 </Button>

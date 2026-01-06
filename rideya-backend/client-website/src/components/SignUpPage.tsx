@@ -1,29 +1,35 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card } from "./ui/card";
-import { ArrowLeft, Mail, Phone, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Eye, EyeOff, User, Car } from "lucide-react";
 import rideyaLogo from "figma:asset/6e7f4dbeb5a4a8f55405b8ef99dd0323b83f0292.png";
-import { useAuthStore } from "../store/authStore";
-import { registerWithEmail, sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../services/auth.service";
-import { useToast } from "./ui/use-toast";
+
+type UserRole = 'PASSENGER' | 'DRIVER';
 
 interface SignUpPageProps {
   onNavigate?: (sectionId: string) => void;
+  selectedRole?: UserRole;
 }
 
-export function SignUpPage({}: SignUpPageProps) {
+export function SignUpPage({ selectedRole: propRole }: SignUpPageProps) {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
-  const { toast } = useToast();
+  const location = useLocation();
+  const roleFromState = location.state?.role as UserRole | undefined;
+  const selectedRole = propRole || roleFromState;
+  
+  // Redirect to role-select if no role is selected
+  useEffect(() => {
+    if (!selectedRole) {
+      console.log('No role selected, redirecting to role-select');
+      navigate('/role-select', { replace: true });
+    }
+  }, [selectedRole, navigate]);
   
   const [authMethod, setAuthMethod] = useState<'google' | 'phone' | 'email'>('google');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -31,160 +37,79 @@ export function SignUpPage({}: SignUpPageProps) {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    otp: ''
+    otp: '',
+    role: selectedRole || 'PASSENGER'
   });
   const [step, setStep] = useState<'method' | 'details' | 'otp'>('method');
+  const [isRedirecting, setIsRedirecting] = useState(!selectedRole);
+
+  // Redirect to role-select if no role is selected
+  useEffect(() => {
+    if (!selectedRole) {
+      console.log('No role selected, redirecting to role-select');
+      setIsRedirecting(true);
+      navigate('/role-select', { replace: true });
+    }
+  }, [selectedRole, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setError(''); // Clear error on input change
   };
 
   const handleGoogleSignUp = () => {
-    loginWithGoogle();
+    // Google OAuth integration will go here
+    console.log('Google Sign Up');
   };
 
-  const handlePhoneSignUp = async () => {
-    if (!formData.phone) {
-      setError('Please enter your phone number');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      await sendPhoneOTP(formData.phone);
+  const handlePhoneSignUp = () => {
+    if (formData.phone) {
       setStep('otp');
-      toast({
-        title: "OTP Sent",
-        description: `Verification code sent to ${formData.phone}`,
-      });
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Failed to send OTP';
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      // SMS OTP logic will go here
+      console.log('Sending OTP to:', formData.phone);
     }
   };
 
-  const handleEmailSignUp = async () => {
-    // Validation
-    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await registerWithEmail({
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      });
-
-      // Store auth data
-      setAuth(
-        response.data.user,
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
-
-      toast({
-        title: "Success!",
-        description: "Account created successfully",
-      });
-
-      // Navigate to dashboard
-      navigate('/dashboard');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Failed to create account';
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  const handleEmailSignUp = () => {
+    if (formData.email && formData.password) {
+      // Email signup logic will go here
+      console.log('Email Sign Up:', formData.email);
     }
   };
 
-  const handleOTPVerification = async () => {
-    if (!formData.otp) {
-      setError('Please enter the OTP code');
-      return;
-    }
-
-    if (!formData.firstName || !formData.lastName) {
-      setError('Please enter your name');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await verifyPhoneOTP(
-        formData.phone,
-        formData.otp,
-        formData.firstName,
-        formData.lastName
-      );
-
-      // Store auth data
-      setAuth(
-        response.data.user,
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
-
-      toast({
-        title: "Success!",
-        description: "Phone verified successfully",
-      });
-
-      navigate('/dashboard');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Invalid OTP';
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  const handleOTPVerification = () => {
+    if (formData.otp) {
+      setStep('details');
+      console.log('OTP Verified:', formData.otp);
     }
   };
 
   const handleCompleteSignUp = () => {
     console.log('Complete Sign Up:', formData);
-    // Navigate to dashboard or home
-    navigate('/dashboard');
+    // Store user role and data
+    localStorage.setItem('userRole', formData.role);
+    localStorage.setItem('userData', JSON.stringify({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      role: formData.role
+    }));
+    // Navigate based on role
+    if (formData.role === 'DRIVER') {
+      navigate('/driver-dashboard');
+    } else {
+      navigate('/');
+    }
   };
 
   const handleBackToHome = () => {
-    navigate('/');
+    navigate('/role-select');
   };
+
+  // Show nothing while redirecting
+  if (isRedirecting || !selectedRole) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -204,7 +129,7 @@ export function SignUpPage({}: SignUpPageProps) {
           onClick={handleBackToHome}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
+          Back to Role Selection
         </Button>
 
         <Card className="p-8 shadow-2xl border-0 bg-white/95 backdrop-blur-lg card-3d">
@@ -223,8 +148,22 @@ export function SignUpPage({}: SignUpPageProps) {
                 />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Join RIDEYA</h1>
-            <p className="text-muted-foreground">Smart Transportation • Sri Lanka</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              Join RIDEYA as {selectedRole === 'DRIVER' ? 'a Driver' : 'a Passenger'}
+            </h1>
+            <p className="text-muted-foreground">
+              {selectedRole === 'DRIVER' ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Drive & Earn • Smart Transportation
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <User className="w-4 h-4" />
+                  Safe Rides • Smart Transportation
+                </span>
+              )}
+            </p>
           </div>
 
           {/* Step: Choose Authentication Method */}
@@ -232,19 +171,11 @@ export function SignUpPage({}: SignUpPageProps) {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-center mb-6">Choose Sign Up Method</h2>
               
-              {/* Error Message */}
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/50 text-destructive px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-              
               {/* Google Sign Up */}
               <Button
                 variant="outline"
                 className="w-full py-6 border-2 hover:border-primary/50 touch-feedback"
                 onClick={handleGoogleSignUp}
-                disabled={isLoading}
               >
                 <div className="flex items-center justify-center space-x-3">
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -298,54 +229,19 @@ export function SignUpPage({}: SignUpPageProps) {
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       className="mt-1"
-                      disabled={isLoading}
                     />
                   </div>
                   <Button 
                     className="w-full button-3d gradient-3d"
                     onClick={handlePhoneSignUp}
-                    disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send OTP'
-                    )}
+                    Send OTP
                   </Button>
                 </div>
               )}
 
               {authMethod === 'email' && (
                 <div className="mt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="John"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className="mt-1"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className="mt-1"
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
                   <div>
                     <Label htmlFor="email">Email Address</Label>
                     <Input
@@ -355,7 +251,6 @@ export function SignUpPage({}: SignUpPageProps) {
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       className="mt-1"
-                      disabled={isLoading}
                     />
                   </div>
                   <div>
@@ -364,11 +259,10 @@ export function SignUpPage({}: SignUpPageProps) {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="At least 8 characters"
+                        placeholder="Create a strong password"
                         value={formData.password}
                         onChange={(e) => handleInputChange('password', e.target.value)}
                         className="mt-1 pr-10"
-                        disabled={isLoading}
                       />
                       <Button
                         type="button"
@@ -376,7 +270,6 @@ export function SignUpPage({}: SignUpPageProps) {
                         size="sm"
                         className="absolute right-0 top-0 h-full px-3"
                         onClick={() => setShowPassword(!showPassword)}
-                        disabled={isLoading}
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
@@ -391,22 +284,13 @@ export function SignUpPage({}: SignUpPageProps) {
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       className="mt-1"
-                      disabled={isLoading}
                     />
                   </div>
                   <Button 
                     className="w-full button-3d gradient-3d"
                     onClick={handleEmailSignUp}
-                    disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Sign Up'
-                    )}
+                    Create Account
                   </Button>
                 </div>
               )}
@@ -514,7 +398,11 @@ export function SignUpPage({}: SignUpPageProps) {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Button variant="link" className="p-0 h-auto font-medium text-primary">
+              <Button 
+                variant="link" 
+                className="p-0 h-auto font-medium text-primary"
+                onClick={() => navigate('/signin', { state: { role: selectedRole } })}
+              >
                 Sign In
               </Button>
             </p>

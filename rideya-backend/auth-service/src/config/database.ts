@@ -6,10 +6,13 @@ export const connectDatabase = async (): Promise<void> => {
     const mongoUri = process.env.MONGODB_URI;
     
     if (!mongoUri) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
+      logger.warn('⚠️  MONGODB_URI is not defined - running without database');
+      return;
     }
 
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    });
     
     logger.info('✅ MongoDB Atlas connected successfully');
     
@@ -23,7 +26,8 @@ export const connectDatabase = async (): Promise<void> => {
     
   } catch (error) {
     logger.error('Failed to connect to MongoDB Atlas:', error);
-    process.exit(1);
+    logger.warn('⚠️  Continuing without database - auth endpoints will not work');
+    // Don't exit, allow service to run without DB for development
   }
 };
 

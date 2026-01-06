@@ -7,6 +7,9 @@ import { DriverInfo } from "./components/DriverInfo";
 import { MapPlaceholder } from "./components/MapPlaceholder";
 import { Footer } from "./components/Footer";
 import { SignUpPage } from "./components/SignUpPage";
+import { SignInPage } from "./components/SignInPage";
+import { RoleSelector } from "./components/RoleSelector";
+import { DriverDashboard } from "./components/DriverDashboardPage";
 import { LoadingPage } from "./components/LoadingPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -19,10 +22,21 @@ function HomePage() {
 
   // Smooth scroll to section
   const scrollToSection = (sectionId: string) => {
-    if (sectionId === 'signup') {
-      navigate('/signup');
+    console.log('scrollToSection called with:', sectionId);
+    
+    // Navigate to role-based auth pages
+    if (sectionId === 'signup' || sectionId === 'role-select') {
+      console.log('Navigating to /role-select');
+      navigate('/role-select');
       return;
     }
+    if (sectionId === 'signin') {
+      console.log('Navigating to /signin');
+      navigate('/signin');
+      return;
+    }
+    
+    // Scroll to page sections
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -250,9 +264,14 @@ function HomePage() {
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
+  };
+
+  const handleRoleSelect = (role: 'PASSENGER' | 'DRIVER') => {
+    navigate('/signup', { state: { role } });
   };
 
   if (isLoading) {
@@ -262,12 +281,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/signup" element={<SignUpPage onNavigate={(sectionId) => {
-        // This will be handled by the SignUpPage component
-        if (sectionId === 'home') {
-          window.location.href = '/';
-        }
-      }} />} />
+      <Route path="/role-select" element={<RoleSelector onRoleSelect={handleRoleSelect} />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/signin" element={<SignInPage />} />
+      <Route path="/driver-dashboard" element={<DriverDashboard />} />
     </Routes>
   );
 }
