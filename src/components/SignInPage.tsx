@@ -44,7 +44,21 @@ export function SignInPage() {
   };
 
   const handleEmailSignIn = () => {
-    if (formData.email && formData.password && selectedRole) {
+    if (formData.email && formData.password) {
+      // Check for admin credentials first
+      if (formData.email === 'ADMIN' && formData.password === 'Admin123') {
+        // Admin login
+        localStorage.setItem('adminAuth', 'true');
+        localStorage.setItem('adminUsername', 'ADMIN');
+        navigate('/admin/dashboard');
+        return;
+      }
+      
+      // Regular user login (requires role selection)
+      if (!selectedRole) {
+        return;
+      }
+      
       // Email signin logic will go here
       console.log('Email Sign In:', formData.email, 'Role:', selectedRole);
       
@@ -282,7 +296,7 @@ export function SignInPage() {
                   <Button 
                     className="w-full button-3d gradient-3d"
                     onClick={handleEmailSignIn}
-                    disabled={!selectedRole}
+                    disabled={!formData.email || !formData.password}
                   >
                     Sign In
                   </Button>

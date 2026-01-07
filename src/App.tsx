@@ -11,6 +11,8 @@ import { SignInPage } from "./components/SignInPage";
 import { RoleSelector } from "./components/RoleSelector";
 import { DriverDashboard } from "./components/DriverDashboardPage";
 import { LoadingPage } from "./components/LoadingPage";
+import { AdminLoginPage } from "./components/AdminLoginPage";
+import { AdminDashboard } from "./components/AdminDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
 import { ChevronUp } from "lucide-react";
@@ -285,6 +287,8 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/driver-dashboard" element={<DriverDashboard />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
     </Routes>
   );
 }
