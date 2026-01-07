@@ -54,11 +54,11 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside 
-        className={`bg-slate-900 text-white transition-all duration-300 ${
+        className={`bg-slate-900 text-white transition-all duration-300 flex flex-col ${
           sidebarOpen ? "w-64" : "w-0 lg:w-20"
         } overflow-hidden`}
       >
-        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-700 flex items-center justify-between flex-shrink-0">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
               <Shield className="h-8 w-8 text-blue-400" />
@@ -75,7 +75,7 @@ export function AdminDashboard() {
           </Button>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -97,10 +97,10 @@ export function AdminDashboard() {
           })}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="p-4 border-t border-slate-700 flex-shrink-0">
           <div className={`bg-slate-800 rounded-lg p-3 mb-3 ${!sidebarOpen && "hidden"}`}>
             <p className="text-sm text-gray-400">Logged in as</p>
-            <p className="font-semibold">{adminUsername}</p>
+            <p className="font-semibold text-white">{adminUsername}</p>
           </div>
           <Button 
             variant="ghost" 
